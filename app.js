@@ -1,14 +1,16 @@
 import express from 'express';
-import { PORT, DB_URL } from './config/index.js';
 import routes from './routes/index.js';
 import mongoose from 'mongoose';
+import dotenv from 'dotenv'
+dotenv.config()
+
 
 const app = express()
 
 app.use(express.json())
 app.use('/api',routes)
-
-mongoose.connect(DB_URL,{
+const port = process.env.PORT || 3000
+mongoose.connect(process.env.DB_URL,{
       useNewUrlParser: true,
       useUnifiedTopology: true,
     })
@@ -19,6 +21,6 @@ mongoose.connect(DB_URL,{
     console.log(" database connection error");
 })
 
-app.listen(PORT, () => {
-    console.log(`Server is listning on port ${PORT}`)
+app.listen(port, () => {
+    console.log(`Server is listning on port ${port}`)
 })
