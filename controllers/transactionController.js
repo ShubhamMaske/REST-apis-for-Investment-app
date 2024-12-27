@@ -13,13 +13,11 @@ export const getBankDetails = async (req, res, next) => {
       return res.status(404).json({ message: 'User not found' })
     }
 
-    res
-      .status(200)
-      .json({
-        accountHolderName: user.accountHolderName,
-        accountNumber: user.accountNumber,
-        ifscCode: user.ifscCode
-      })
+    res.status(200).json({
+      accountHolderName: user.accountHolderName,
+      accountNumber: user.accountNumber,
+      ifscCode: user.ifscCode
+    })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }
@@ -68,28 +66,68 @@ export const getTransactions = async (req, res, next) => {
 }
 
 export const investMoney = async (req, res, next) => {
-    try {
-        const amount = +req.body.amount;
-        const userId = req.user.id;
-    
-        if (!amount || amount <= 0) {
-          return res.status(400).json({ message: 'Invalid investment amount' });
-        }
-    
-        await Transaction.create({user: userId, type: 'investment', amount });
-    
-        let investment = await Investment.findOne({ user: userId });
-        if (!investment) {
-          investment = await Investment.create({ user: userId, totalInvested: amount });
-        } else {
-            investment.totalInvested += amount;
-            await investment.save();
-        }
-    
-        return res.status(200).json({ message: 'Investment successful', investment });
-    
-      } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Server error' });
-      }
+  try {
+    const amount = +req.body.amount
+    const userId = req.user.id
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: 'Invalid investment amount' })
+    }
+    await Transaction.create({ user: userId, type: 'investment', amount })
+
+    let investment = await Investment.findOne({ user: userId })
+    if (!investment) {
+      investment = await Investment.create({
+        user: userId,
+        totalInvested: amount
+      })
+    } else {
+      investment.totalInvested += amount
+      await investment.save()
+    }
+
+    return res
+      .status(200)
+      .json({ message: 'Investment successful', investment })
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({ message: 'Server error' })
   }
+}
+
+/*
+
+  this logic we can use to check if investment ammount paid successfully or not,
+  this is razorpay webhook logic, after payment done/fail the webhook endpoint calls
+  ----------------------
+  
+  const secret = process.env.razorpaySecret;
+
+    const shasum = crypto.createHmac('sha256', secret);
+    shasum.update(JSON.stringify(req.body));
+    const digest = shasum.digest('hex');
+    console.log("Request headers => ", req.headers)
+
+    if (digest === req.headers['x-razorpay-signature']) {
+        // Signature is valid, handle the event
+        const event = req.body.event;
+        const payload = req.body.payload;
+
+        switch (event) {
+            case 'payment_link.paid':
+                // handeling the investmentdetails and transaction updates logic
+
+                console.log('Payment link paid:', payload);
+                break;
+            
+            case 'payment.failed':
+                // Handle payment link paid
+                console.log('Payment link paid:', payload);
+                break;
+
+            default:
+                console.log('Unhandled event type:', event);
+                break;
+        }
+
+*/
